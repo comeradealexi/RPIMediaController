@@ -1,0 +1,27 @@
+body {
+  color: #555;
+  font-size: 1.0em;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  margin: 0px;
+}
+
+hr {
+  margin: 50px 0;
+}
+
+ul {
+  list-style: none;
+}
+
+.container {
+  margin: 40px auto;
+  max-width: 700px;
+}
+
+li {
+  margin-top: 1em;
+}
+
+label {
+  font-weight: bold;
+}
