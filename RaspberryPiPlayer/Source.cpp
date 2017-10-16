@@ -16,6 +16,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <cstdarg>
+#include <vector>
 #include "HtmlHeader.h"
 
 typedef std::map<int, std::string> LookupList;
@@ -238,6 +239,26 @@ void RecursivelyBuildListHtml(char* pszPath, FILE* pOutputFile, const char* pPre
 	}
 }
 
+void SaveMapToFile(LookupList& lookupList)
+{
+	typedef std::pair<int, std::string> MapEntry;
+	std::vector<MapEntry> sortedList;
+
+	for (const auto& e : lookupList)
+		sortedList.push_back(e);
+
+	std::sort(sortedList.begin(), sortedList.end(), [](const MapEntry& m1, const MapEntry& m2) -> bool { return m1.first < m2.first; });
+
+	std::ofstream m_LogFile;
+	m_LogFile.open("mapEntriesList.txt");
+	if (m_LogFile.good())
+	{
+		for (const auto& e : sortedList)
+			m_LogFile << e.first << " : " << e.second << std::endl;
+		m_LogFile.close();
+	}
+}
+
 void GenerateHtml(LookupList& lookupList)
 {
 	FILE* pOutputFile = fopen("index.html", "wb");
@@ -260,6 +281,8 @@ void GenerateHtml(LookupList& lookupList)
 		fprintf(pOutputFile,k_szFooter);
 
 		fclose(pOutputFile);
+
+		SaveMapToFile(lookupList);
 	}
 }
 
