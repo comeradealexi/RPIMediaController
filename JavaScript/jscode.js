@@ -53,22 +53,28 @@ function GatherAllTicked()
         {
 			var allChildrenTypes = allCheckboxClasses[i].parentElement.parentElement.getElementsByClassName("checkboxClass");
 			var AllChildrenChecked = true;
-			for(var j = 1; j < allChildrenTypes.length; j++)
+
+			if (allChildrenTypes.length == 1)
+				checkedList.push(allCheckboxClasses[i].id);
+			else
 			{
-				if (allChildrenTypes[j].checked == false)
-					AllChildrenChecked = false;
-			}
-			if (AllChildrenChecked == true)
-			{
-				//checkedList.push(allCheckboxClasses[i].id);
-				for(var j = 1; j < allChildrenTypes.length; j++) 
+				for(var j = 1; j < allChildrenTypes.length; j++)
 				{
-					if (allChildrenTypes[j].name == "file")
-						checkedList.push(allChildrenTypes[j].id); 
-					else 
-						rejectList.push(allChildrenTypes[j].id);
+					if (allChildrenTypes[j].checked == false)
+						AllChildrenChecked = false;
 				}
-			}
+				if (AllChildrenChecked == true)
+				{
+					//checkedList.push(allCheckboxClasses[i].id);
+					for(var j = 1; j < allChildrenTypes.length; j++) 
+					{
+						if (allChildrenTypes[j].name == "file")
+							checkedList.push(allChildrenTypes[j].id); 
+						else 
+							rejectList.push(allChildrenTypes[j].id);
+					}
+				}
+			}			
 		}
 	}
 	return checkedList;
