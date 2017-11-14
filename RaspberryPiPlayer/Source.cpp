@@ -284,6 +284,10 @@ void GenerateHtml(LookupList& lookupList)
 
 		SaveMapToFile(lookupList);
 	}
+
+	g_LogClass.Printf("Copying index.html to www folder\n");
+	int retVal = system("cp -f -v index.html /var/www/html/index.html");
+	g_LogClass.Printf("Copy returned code %i\n", retVal);
 }
 
 const char* g_kHDDRootDir = "";
