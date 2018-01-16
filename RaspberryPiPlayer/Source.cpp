@@ -57,6 +57,18 @@ then it'll be in the /mnt dir
 
 Dir I actually want: "/mnt/TV Shows/" and "/mnt/Films/"
 
+AUTO MOUNT POINT:
+The auto mounting point is: /etc/fstab
+This is what auto-mounts it or something...
+
+*/
+
+/*
+ADD TO BOOT:
+
+/etc/rc.local
+
+
 */
 
 //File System Dir Thingy
@@ -286,6 +298,7 @@ void GenerateHtml(LookupList& lookupList)
 	}
 
 	g_LogClass.Printf("Copying index.html to www folder\n");
+	g_LogClass << "Command Line is: " << "cp -f -v index.html /var/www/html/index.html" << "\n";
 	int retVal = system("cp -f -v index.html /var/www/html/index.html");
 	g_LogClass.Printf("Copy returned code %i\n", retVal);
 }
@@ -359,11 +372,37 @@ private:
 
 void PlayerClass::EnsureMounted()
 {
-	auto pFile = opendir("/mnt");
-	if (pFile)
-		closedir(pFile);
-	else 
-		system("mount /dev/sda1 /mnt");
+	bool bAllGood = false;
+	while (bAllGood == false)
+	{
+		int iMount = system("sudo mount -av");
+		if (iMount != 0)
+		{
+			g_LogClass << "\"sudo mount -av\" returned code " << iMount << std::endl;
+		}
+		else
+		{
+			g_LogClass << "\"sudo mount -av\" was successful!\n";
+			break;
+		}
+
+		auto pFile = opendir("/mnt/TV Shows/");
+		if (pFile)
+		{
+			g_LogClass << "Successfully opened /mnt/TV Shows/\n";
+			closedir(pFile);
+			bAllGood = true;
+		}
+		else
+		{
+			const char * const szPMntCmdLine = "mount /dev/sda1 /mnt";
+			g_LogClass << "Running Command Line: " << szPMntCmdLine << "\n";
+			int iRet = system(szPMntCmdLine);
+			g_LogClass << "Mount Returned Code: " << iRet << std::endl;
+		}
+		g_LogClass << "Will try to mount again in 5 seconds\n";
+		std::this_thread::sleep_for(std::chrono::seconds(5));
+	}
 }
 
 void PlayerClass::IssueOMXCommand(OMXCommandList cmd)
