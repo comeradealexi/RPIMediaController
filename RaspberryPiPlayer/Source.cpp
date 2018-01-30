@@ -239,7 +239,7 @@ void RecursivelyBuildListHtml(char* pszPath, FILE* pOutputFile, const char* pPre
 			if (dirp->d_type == DT_REG) 
 				lookupList[ID] = tmpPath;
 
-			fprintf(pOutputFile, "<li>" "<img style=\"width:15px; height:15px; background - color: lightblue;\" src=\"down.png\" onclick=\"dropdownfunction(this)\"></img>" "<label><input %s onclick=\"UpdateMarkings(this)\" type=\"checkbox\" id=\"%s\" class=\"checkboxClass\">%s</label>\n", szName, std::to_string(ID++).c_str(), dirp->d_name);
+			fprintf(pOutputFile, "<li style=\"font-size:30px;\">" "<img style=\"width:30px; height:30px; background - color: lightblue;\" src=\"down.png\" onclick=\"dropdownfunction(this)\"></img>" "<label><input %s onclick=\"UpdateMarkings(this)\" style=\"width:30px;height:30px;\" type=\"checkbox\" id=\"%s\" class=\"checkboxClass\">%s</label>\n", szName, std::to_string(ID++).c_str(), dirp->d_name);
 			if (dirp->d_type == DT_DIR)
 			{
 				fprintf(pOutputFile, "<ul style=\"%s\">\n", displayType);
@@ -282,8 +282,8 @@ void GenerateHtml(LookupList& lookupList)
 		int iID = 0;
 		lookupList[iID] = "/mnt/TV Shows";
 
-		fprintf(pOutputFile, "<ul>\n");
-		fprintf(pOutputFile, "<li>" "<img style=\"width:15px; height:15px; background - color: lightblue;\" src=\"right.png\" onclick=\"dropdownfunction(this)\"></img>" "<label><input onclick=\"UpdateMarkings(this)\" type=\"checkbox\" id=\"%s\" class=\"checkboxClass\">%s</label>\n", std::to_string(iID++).c_str(), "TV Shows");
+		fprintf(pOutputFile, "<ul style=\"word-wrap: break-word;\">\n");
+		fprintf(pOutputFile, "<li>" "<img style=\"width:30px; height:30px; background - color: lightblue;\" src=\"right.png\" onclick=\"dropdownfunction(this)\"></img>" "<label><input onclick=\"UpdateMarkings(this)\" style=\"width:30px;height:30px;\" type=\"checkbox\" id=\"%s\" class=\"checkboxClass\">%s</label>\n", std::to_string(iID++).c_str(), "TV Shows");
 		fprintf(pOutputFile, "<ul>\n");
 		RecursivelyBuildListHtml("/mnt/TV Shows", pOutputFile, "TV Shows", 0, iID, lookupList);
 		fprintf(pOutputFile, "</ul>\n");
