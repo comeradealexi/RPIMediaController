@@ -531,7 +531,7 @@ void PlayerClass::BroadcastCurrentVideo(std::string str)
 	{
 		if (str.length() < 2)
 		{
-			fprintf(pFile, '\0');
+			fprintf(pFile, "\0");
 		}
 		else //Gets just the file name, reads from the last slash
 		{
@@ -651,6 +651,7 @@ void PlayerClass::Run()
 			m_bInputAvailable = false;
 			break;
 		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 }
 
