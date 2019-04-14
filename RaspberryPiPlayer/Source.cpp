@@ -17,6 +17,7 @@
 #include <dirent.h>
 #include <cstdarg>
 #include <vector>
+#include "Settings.h"
 #include "HtmlHeader.h"
 
 typedef std::map<int, std::string> LookupList;
@@ -81,12 +82,12 @@ private:
 public:
 	//Allows writing to ofstream as well as cout!
 	template <typename T>
-	std::ostream& operator<<(const T& TData)
+	LogClass& operator<<(const T& TData)
 	{
 		std::unique_lock<std::recursive_mutex> lk(m_LogMutex);
 		m_LogFile << TData;
 		std::cout << TData;
-		return m_LogFile;
+		return *this;
 	}
 
 	void Printf(const char* __fmt, ...)
@@ -173,7 +174,7 @@ int getdir(std::string dir, std::vector<std::string> &files)
 	DIR *dp;
 	struct dirent *dirp;
 	if ((dp = opendir(dir.c_str())) == NULL) {
-		g_LogClass << "Error(" << errno << ") opening " << dir << std::endl;
+		g_LogClass << "Error(" << errno << ") opening " << dir << "\n";
 		return errno;
 	}
 
@@ -212,7 +213,7 @@ bool ShouldIgnoreReg(const char* psz)
 	return true;
 }
 
-void RecursivelyBuildListHtml(char* pszPath, FILE* pOutputFile, const char* pPrevName, int iDepth, int& ID, LookupList& lookupList)
+void RecursivelyBuildListHtml(const char* pszPath, FILE* pOutputFile, const char* pPrevName, int iDepth, int& ID, LookupList& lookupList)
 {
 	char tmpPath[1024];
 	DIR* dp = opendir(pszPath);
@@ -266,41 +267,9 @@ void SaveMapToFile(LookupList& lookupList)
 	if (m_LogFile.good())
 	{
 		for (const auto& e : sortedList)
-			m_LogFile << e.first << " : " << e.second << std::endl;
+			m_LogFile << e.first << " : " << e.second << "\n";
 		m_LogFile.close();
 	}
-}
-
-void GenerateHtml(LookupList& lookupList)
-{
-	FILE* pOutputFile = fopen("index.html", "wb");
-	if (pOutputFile)
-	{
-
-		fprintf(pOutputFile, k_szHeader);
-
-		int iID = 0;
-		lookupList[iID] = "/mnt/TV Shows";
-
-		fprintf(pOutputFile, "<ul style=\"word-wrap: break-word;\">\n");
-		fprintf(pOutputFile, "<li>" "<img style=\"width:30px; height:30px; background - color: lightblue;\" src=\"right.png\" onclick=\"dropdownfunction(this)\"></img>" "<label><input onclick=\"UpdateMarkings(this)\" style=\"width:30px;height:30px;\" type=\"checkbox\" id=\"%s\" class=\"checkboxClass\">%s</label>\n", std::to_string(iID++).c_str(), "TV Shows");
-		fprintf(pOutputFile, "<ul>\n");
-		RecursivelyBuildListHtml("/mnt/TV Shows", pOutputFile, "TV Shows", 0, iID, lookupList);
-		fprintf(pOutputFile, "</ul>\n");
-		fprintf(pOutputFile, "</li>\n");
-		fprintf(pOutputFile, "</ul>\n");
-
-		fprintf(pOutputFile,k_szFooter);
-
-		fclose(pOutputFile);
-
-		SaveMapToFile(lookupList);
-	}
-
-	g_LogClass.Printf("Copying index.html to www folder\n");
-	g_LogClass << "Command Line is: " << "cp -f -v index.html /var/www/html/index.html" << "\n";
-	int retVal = system("cp -f -v index.html /var/www/html/index.html");
-	g_LogClass.Printf("Copy returned code %i\n", retVal);
 }
 
 const char* g_kHDDRootDir = "";
@@ -315,10 +284,11 @@ public:
 		m_bInputAvailable(false), 
 		m_omxDataAvailable(false)
 	{
+		g_LogClass << "The root folder is: \"" << m_settings.GetRootFolder() << "\"\n";
 		std::srand(std::time(0));
 		EnsureMounted();
 		GenerateHtml(m_lookupList);
-		g_LogClass << "m_lookupList size: " << m_lookupList.size() << std::endl;
+		g_LogClass << "m_lookupList size: " << m_lookupList.size() << "\n";
 		m_pOMXPlayThread = new std::thread(&PlayerClass::OmxThread, this);
 		m_pInputThread = new std::thread(&PlayerClass::InputThread, this);
 		BroadcastCurrentVideo("");
@@ -339,6 +309,7 @@ public:
 			delete m_pInputThread;
 		}
 	}
+	void GenerateHtml(LookupList& lookupList);
 	void EnsureMounted();
 	void IssueOMXCommand(OMXCommandList cmd);
 	void InputThread();
@@ -352,6 +323,10 @@ public:
 	void UpdateIdle();
 	void UpdatePlaying();
 	void Run();
+
+private:
+	Settings m_settings = Settings("rpi_config.txt");
+
 private:
 	PlayState			m_eState = PlayState::IDLE;
 	LookupList			m_lookupList;
@@ -370,36 +345,64 @@ private:
 	std::string			m_strInput;
 };
 
+void PlayerClass::GenerateHtml(LookupList& lookupList)
+{
+	FILE* pOutputFile = fopen("index.html", "wb");
+	if (pOutputFile)
+	{
+
+		fprintf(pOutputFile, k_szHeader);
+
+		int iID = 0;
+		lookupList[iID] = m_settings.GetRootFolderC();
+
+		fprintf(pOutputFile, "<ul style=\"word-wrap: break-word;\">\n");
+		fprintf(pOutputFile, "<li>" "<img style=\"width:30px; height:30px; background - color: lightblue;\" src=\"right.png\" onclick=\"dropdownfunction(this)\"></img>" "<label><input onclick=\"UpdateMarkings(this)\" style=\"width:30px;height:30px;\" type=\"checkbox\" id=\"%s\" class=\"checkboxClass\">%s</label>\n", std::to_string(iID++).c_str(), "TV Shows");
+		fprintf(pOutputFile, "<ul>\n");
+		RecursivelyBuildListHtml(m_settings.GetRootFolderC(), pOutputFile, "TV Shows", 0, iID, lookupList);
+		fprintf(pOutputFile, "</ul>\n");
+		fprintf(pOutputFile, "</li>\n");
+		fprintf(pOutputFile, "</ul>\n");
+
+		fprintf(pOutputFile, k_szFooter);
+
+		fclose(pOutputFile);
+
+		SaveMapToFile(lookupList);
+	}
+
+	g_LogClass.Printf("Copying index.html to www folder\n");
+	g_LogClass << "Command Line is: " << "cp -f -v index.html /var/www/html/index.html" << "\n";
+	int retVal = system("cp -f -v index.html /var/www/html/index.html");
+	g_LogClass.Printf("Copy returned code %i\n", retVal);
+}
+
 void PlayerClass::EnsureMounted()
 {
-	bool bAllGood = false;
-	while (bAllGood == false)
+	while (true)
 	{
-		int iMount = system("sudo mount -av");
-		if (iMount != 0)
-		{
-			g_LogClass << "\"sudo mount -av\" returned code " << iMount << std::endl;
-		}
-		else
-		{
-			g_LogClass << "\"sudo mount -av\" was successful!\n";
-			break;
-		}
-
-		auto pFile = opendir("/mnt/TV Shows/");
+		auto pFile = opendir(m_settings.GetRootFolderC());
 		if (pFile)
 		{
-			g_LogClass << "Successfully opened /mnt/TV Shows/\n";
+			g_LogClass << "Successfully opened " << m_settings.GetRootFolder() << "\n";
 			closedir(pFile);
-			bAllGood = true;
+			break;
 		}
 		else
 		{
-			const char * const szPMntCmdLine = "mount /dev/sda1 /mnt";
-			g_LogClass << "Running Command Line: " << szPMntCmdLine << "\n";
-			int iRet = system(szPMntCmdLine);
-			g_LogClass << "Mount Returned Code: " << iRet << std::endl;
+			g_LogClass << "Could not open \"" << m_settings.GetRootFolder() << "\" Will attempt to mount...\n";
 		}
+
+		int iMount = system("sudo mount -a -v");
+		if (iMount != 0)
+		{
+			g_LogClass << "\"sudo mount -a -v\" returned code " << iMount << "\n";
+		}
+		else
+		{
+			g_LogClass << "\"sudo mount -a -v\" was successful!\n";
+		}	
+
 		g_LogClass << "Will try to mount again in 5 seconds\n";
 		std::this_thread::sleep_for(std::chrono::seconds(5));
 	}
@@ -479,12 +482,14 @@ void PlayerClass::ExtractPlayData(std::string& str)
 
 bool PlayerClass::PlayNewVideo()
 {
+	//Make sure it's mounted here still.
+	EnsureMounted();
 	if (m_playList.size() > 0)
 	{
 		int iRandomNumber = std::rand() % m_playList.size();
 		const std::string& fileToPlay = m_lookupList[m_playList[iRandomNumber]];
 		m_playList.erase(m_playList.begin() + iRandomNumber);
-		g_LogClass << "The video to be played is: " << fileToPlay << "ID: " << m_playList[iRandomNumber] << std::endl;
+		g_LogClass << "The video to be played is: " << fileToPlay << "ID: " << m_playList[iRandomNumber] << "\n";
 		m_strActiveVideo = fileToPlay;
 		BroadcastCurrentVideo(fileToPlay);
 		m_omxDataAvailable = true;
@@ -499,11 +504,14 @@ bool PlayerClass::PlayNewVideo()
 
 void PlayerClass::InputThread()
 {
-	system("mkfifo thefifofile");
+	auto fifoReturnValue = system("mkfifo thefifofile");
+	g_LogClass << "\"mkfifo thefifofile\" returned code: " << fifoReturnValue << "\n";
+	fifoReturnValue = system("chmod 777 thefifofile");
+	g_LogClass << "\"chmod 777 thefifofile\" returned code: " << fifoReturnValue << "\n";
 
 	while (m_bKillProgram == false)
 	{
-		g_LogClass << "Input Thread Waiting for Input Pid is: " << std::to_string(getpid()) << std::endl;
+		g_LogClass << "Input Thread Waiting for Input Pid is: " << std::to_string(getpid()) << "\n";
 
 		FILE* pFile = fopen("thefifofile", "r");
 		if (pFile)
@@ -511,13 +519,13 @@ void PlayerClass::InputThread()
 			char cbuffer[1024 * 1024];
 			fgets(cbuffer, sizeof(cbuffer), pFile);
 			m_strInput = cbuffer;
-			g_LogClass << "Received Input of: \"" << m_strInput << "\"" << std::endl;
+			g_LogClass << "Received Input of: \"" << m_strInput << "\"" << "\n";
 
 			m_bInputAvailable = true;
 			fclose(pFile);
 		}
 		else
-			g_LogClass << "did not open file" << std::endl;
+			g_LogClass << "did not open file" << "\n";
 
 		while (m_bInputAvailable == true)
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -562,7 +570,7 @@ void PlayerClass::OmxThread()
 		{
 			char cbuffer[1024];
 			sprintf(cbuffer, "omxplayer \"%s\" -o hdmi -b < AH_OMXPlayerFIFO", m_strActiveVideo.c_str());
-			g_LogClass << "OmxThread: Playing video with the following command: " << cbuffer << std::endl;
+			g_LogClass << "OmxThread: Playing video with the following command: " << cbuffer << "\n";
 			system(cbuffer);
 			m_omxDataAvailable = false;
 			m_pOMXInputFile = nullptr;
@@ -576,7 +584,7 @@ void PlayerClass::OmxThread()
 void PlayerClass::ProcessNewVideoRequest()
 {
 	m_playList.clear();
-	g_LogClass << "STATE IDLE: Received Play Request" << std::endl;
+	g_LogClass << "STATE IDLE: Received Play Request" << "\n";
 	IssueOMXCommand(OMXCommandList::STOP);
 	ExtractPlayData(m_strInput);
 	PlayNewVideo();
@@ -605,7 +613,7 @@ void PlayerClass::UpdatePlaying()
 
 	if (m_bInputAvailable)
 	{
-		g_LogClass << "STATE PLAYING: Received Input" << std::endl;
+		g_LogClass << "STATE PLAYING: Received Input" << "\n";
 		if (m_strInput[0] == 'p')
 		{
 			PlayerClass::ProcessNewVideoRequest();

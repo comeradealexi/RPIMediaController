@@ -61,10 +61,12 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
+    <ClCompile Include="Settings.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HtmlHeader.h" />
+    <ClInclude Include="Settings.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <Link>
@@ -79,6 +81,11 @@
     <Link>
       <LibraryDependencies>pthread</LibraryDependencies>
     </Link>
+    <ClCompile>
+      <CppLanguageStandard>c++17</CppLanguageStandard>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <UnrollLoops>true</UnrollLoops>
+    </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
